@@ -1,0 +1,3 @@
+[submodule "enviRule"]
+	path = enviRule
+	url = https://github.com/MyCreativityOutlet/enviRule
