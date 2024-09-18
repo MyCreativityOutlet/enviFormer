@@ -4,6 +4,7 @@ import pandas as pd
 import json
 from tqdm import trange
 import os
+import subprocess
 from argparse import ArgumentParser
 from models.TransformerModel import TransformerModel
 from EnviRuleExperiments import EnviRuleModel
@@ -95,6 +96,8 @@ def main(args):
 
 
 if __name__ == "__main__":
+    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     parser = ArgumentParser()
     parser.add_argument("--model-name", type=str, default="envirule")
     parser.add_argument("--data-name", type=str, default="")
@@ -108,3 +111,4 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cpu")
     arguments = parser.parse_args()
     main(arguments)
+    proc.kill()

@@ -3,6 +3,7 @@ from py4j.java_gateway import JavaGateway
 import os
 import json
 from tqdm import tqdm
+import subprocess
 from argparse import ArgumentParser
 
 
@@ -63,6 +64,8 @@ def main(args):
 
 
 if __name__ == "__main__":
+    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     parser = ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument("--tokenizer", type=str, default="regex")
@@ -71,3 +74,4 @@ if __name__ == "__main__":
     parser.add_argument("--preprocessor", type=str, default="envipath", help="Type of preprocessing to use, envipath or rdkit")
     arguments = parser.parse_args()
     main(arguments)
+    proc.kill()

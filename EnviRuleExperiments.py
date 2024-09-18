@@ -4,6 +4,7 @@ from utils.FormatData import *
 from argparse import ArgumentParser
 from EnviFormerExperiments import mean_dicts
 from py4j.java_gateway import JavaGateway
+import subprocess
 from utils.multilabelClassifiers import EnsembleClassifierChain
 from rdkit import Chem
 from rdkit.Chem import MACCSkeys
@@ -264,6 +265,8 @@ def main(args):
 
 
 if __name__ == "__main__":
+    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     parser = ArgumentParser()
     parser.add_argument("-ss", "--skip-single", action="store_true")
     parser.add_argument("-sm", "--skip-multi", action="store_true")
@@ -276,3 +279,4 @@ if __name__ == "__main__":
                         help="Type of preprocessing to use, envipath or rdkit")
     arguments = parser.parse_args()
     main(arguments)
+    proc.kill()

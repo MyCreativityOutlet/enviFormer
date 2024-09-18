@@ -1,6 +1,7 @@
 import os
 from argparse import ArgumentParser, Namespace
 import pytorch_lightning as pl
+import subprocess
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint, EarlyStopping
 import json
@@ -76,6 +77,8 @@ def main(args: Namespace) -> None:
 
 
 if __name__ == "__main__":
+    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     parser = ArgumentParser()
     parser.add_argument("model_name", type=str, help="Valid models include: TransformerModel")
     parser.add_argument("data_name", type=str, help="Which dataset to use, uspto, pubchem, envipath, baeyer")
@@ -92,3 +95,4 @@ if __name__ == "__main__":
     parser.add_argument("--weights-dataset", type=str, default="", help="Pretrained weights based on what dataset")
     parser.add_argument("--preprocessor", type=str, default="envipath", help="Type of preprocessing to use, envipath or rdkit")
     main(parser.parse_args())
+    proc.kill()

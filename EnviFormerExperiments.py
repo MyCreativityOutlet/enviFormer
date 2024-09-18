@@ -1,5 +1,6 @@
 import torch.cuda
 from argparse import ArgumentParser
+import subprocess
 import pytorch_lightning as pl
 from PreTrainTransformer import setup_model, build_trainer
 from utils.EvalFunctions import predict_singlegen, predict_multigen
@@ -192,6 +193,8 @@ def train_eval_single_multi(args):
 
 
 if __name__ == "__main__":
+    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     parser = ArgumentParser()
     parser.add_argument("model_name", type=str, help="Valid models include: TransformerModel, "
                                                      "FingerprintModel, MultipleDecodersModel")
@@ -219,3 +222,4 @@ if __name__ == "__main__":
             train_eval_single_multi(arguments)
     else:
         train_eval_single_multi(arguments)
+    proc.kill()
