@@ -8,7 +8,7 @@ import json
 import torch
 from utils.FormatData import get_dataset
 from models.BaseModel import BaseModel
-from models.TransformerModel import TransformerModel
+from models.EnviFormerModel import EnviFormerModel
 
 
 def build_trainer(args: Namespace, config: dict, monitor_value="val_seq_acc") -> pl.Trainer:
@@ -80,9 +80,9 @@ if __name__ == "__main__":
     proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     parser = ArgumentParser()
-    parser.add_argument("model_name", type=str, help="Valid models include: TransformerModel")
-    parser.add_argument("data_name", type=str, help="Which dataset to use, uspto, pubchem, envipath, baeyer")
-    parser.add_argument("tokenizer", type=str, help="Style of tokenizer, regex")
+    parser.add_argument("--model_name", type=str, default="EnviFormerModel", help="Valid models include: EnviFormerModel")
+    parser.add_argument("--data_name", type=str, default="uspto", help="Which dataset to use, uspto, envipath")
+    parser.add_argument("--tokenizer", type=str, default="regex", help="Style of tokenizer, regex")
     parser.add_argument("--max-len", type=int, default=256, help="Maximum encoded length to consider")
     parser.add_argument("--min-len", type=int, default=0, help="Minimum encoded length to consider")
     parser.add_argument("--test-mapping", action="store_true", help="Whether to remove atom mapping before calculating accuracy")

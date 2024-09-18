@@ -2,7 +2,7 @@ import torch.cuda
 from argparse import ArgumentParser
 import subprocess
 import pytorch_lightning as pl
-from PreTrainTransformer import setup_model, build_trainer
+from PreTrainEnviFormer import setup_model, build_trainer
 from utils.EvalFunctions import predict_singlegen, predict_multigen
 from utils.FormatData import *
 
@@ -196,10 +196,10 @@ if __name__ == "__main__":
     proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     parser = ArgumentParser()
-    parser.add_argument("model_name", type=str, help="Valid models include: TransformerModel, "
-                                                     "FingerprintModel, MultipleDecodersModel")
-    parser.add_argument("data_name", type=str, help="Which dataset to use, uspto, pubchem, envipath, baeyer")
-    parser.add_argument("tokenizer", type=str, help="Style of tokenizer, selfies, regex")
+    parser.add_argument("data_name", type=str, default="soil", help="Which dataset to use, uspto or envipath")
+    parser.add_argument("--model-name", type=str, default="EnviFormerModel",
+                        help="Valid models include: EnviFormerModel")
+    parser.add_argument("--tokenizer", type=str, default="regex", help="Style of tokenizer, regex")
     parser.add_argument("--max-len", type=int, default=256, help="Maximum encoded length to consider")
     parser.add_argument("--min-len", type=int, default=0, help="Minimum encoded length to consider")
     parser.add_argument("--augment-count", type=int, default=-1, help="How much SMILES augmentation to do, -1 disables")

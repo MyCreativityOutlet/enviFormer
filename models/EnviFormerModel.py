@@ -14,7 +14,7 @@ from utils.TorchExtensions import process_seq_test_outputs, seq_metrics, beam_de
 from utils.FormatData import encode_reactions, get_data_splits, get_loaders, augment_reactions, get_all_envipath_smirks, remove_mapping, encode_mol, get_cannon_func
 
 
-class TransformerModel(BaseModel):
+class EnviFormerModel(BaseModel):
     def __init__(self, config: dict, vocab: Any, p_args, **kwargs):
         super().__init__(p_args)
         if type(vocab) is tuple or type(vocab) is list:

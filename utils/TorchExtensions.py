@@ -241,7 +241,7 @@ def update_beams(i, decode_func, model, token_ids_list, pad_mask_list, lls_list,
 
 
 def beam_decode(model, x: Tensor, num_beams: int = 8):
-    if model.__class__.__name__ == "TransformerModel":
+    if model.__class__.__name__ == "EnviFormerModel":
         enc_out, src_mask = model.encode(x)
         decode_func = partial(model.decode, enc_out=enc_out, src_mask=src_mask, test=True)
     else:

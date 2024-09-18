@@ -18,7 +18,6 @@ from sklearn.model_selection import train_test_split
 from rdkit import Chem
 from rdkit.rdBase import BlockLogs
 from typing import Iterable
-import subprocess
 
 
 def run_reaction(rule, reactant_smiles, return_smiles=True):

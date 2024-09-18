@@ -132,8 +132,14 @@ class EnviRuleModel:
 
 
 def main(args):
-    transformer_base = "results/TransformerModel/"
-    transformer_folders = [transformer_base + "leave_sludge_regex/"]
+    transformer_base = "results/EnviFormerModel/"
+    if args.data_name != "":
+        transformer_folders = [args.data_name]
+    else:
+        # Add experiments to this line to run multiple experiments
+        transformer_folders = ["leave_sludge"]
+    transformer_folders = [transformer_base + t + "_regex/" for t in transformer_folders]
+
     method_name = "envipath" if args.existing_rules else "envirule"
     java_gateway = JavaGateway()
     for dataset in transformer_folders:

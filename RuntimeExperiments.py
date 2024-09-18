@@ -6,20 +6,20 @@ from tqdm import trange
 import os
 import subprocess
 from argparse import ArgumentParser
-from models.TransformerModel import TransformerModel
+from models.EnviFormerModel import EnviFormerModel
 from EnviRuleExperiments import EnviRuleModel
 from utils.FormatData import get_all_envipath_smirks, get_all_pathways
 from utils.EvalFunctions import predict_multigen
 
 
 def run_experiment(args, save_folder):
-    if args.model_name == "TransformerModel":
-        with open(f"results/TransformerModel/uspto_regex/tokens.json") as t_file:
+    if args.model_name == "EnviFormerModel":
+        with open(f"results/EnviFormerModel/uspto_regex/tokens.json") as t_file:
             tokenizer = json.load(t_file)
-        with open(f"models/TransformerModel_config.json") as config_file:
+        with open(f"models/EnviFormerModel_config.json") as config_file:
             config = json.load(config_file)
         tokenizer[1] = {int(k): v for k, v in tokenizer[1].items()}
-        model = TransformerModel.load_from_checkpoint("results/TransformerModel/soil_regex/checkpoints/epoch=148-step=969838.ckpt",
+        model = EnviFormerModel.load_from_checkpoint("results/EnviFormerModel/soil_regex/checkpoints/epoch=148-step=969838.ckpt",
                                                       map_location="cpu", config=config, vocab=tokenizer, p_args=args)
         model = model.to(args.device)
         model = torch.compile(model, mode="reduce-overhead")
