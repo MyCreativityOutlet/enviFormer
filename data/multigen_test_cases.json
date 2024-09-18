@@ -1,0 +1,140 @@
+{
+  "simple_pathway": {
+        "true_path": {"nodes": [
+        {"smiles": "A", "depth": 0},
+        {"smiles": "B", "depth": 1},
+        {"smiles": "C", "depth": 1},
+        {"smiles": "D", "depth": 1},
+        {"smiles": "H", "depth": 2}
+    ], "links": [
+        {"source": 0, "target": 1},
+        {"source": 0, "target": 2},
+        {"source": 0, "target": 3},
+        {"source": 2, "target": 4}
+    ]},
+    "pred_path": {"nodes": [
+        {"smiles": "A", "depth": 0},
+        {"smiles": "E", "depth": 1},
+        {"smiles": "F", "depth": 2},
+        {"smiles": "B", "depth": 2},
+        {"smiles": "C", "depth": 1},
+        {"smiles": "D", "depth": 1}
+    ], "links": [
+        {"source": 0, "target": 1},
+        {"source": 0, "target": 4},
+        {"source": 0, "target": 5},
+        {"source": 1, "target": 3},
+        {"source": 5, "target": 2}
+    ]},
+    "results": [0.75, 0.8571, 0.8571]
+  },
+  "tree_graph_equality": {"true_path": {"nodes": [
+        {"smiles": "A", "depth": 0},
+        {"smiles": "A", "depth": 2},
+        {"smiles": "B", "depth": 1},
+        {"smiles": "C", "depth": 2},
+        {"smiles": "C", "depth": 3},
+        {"smiles": "D", "depth": 2},
+        {"smiles": "E", "depth": 4},
+        {"smiles": "E", "depth": 3}
+    ], "links": [
+        {"source": 0, "target": 2},
+        {"source": 2, "target": 1},
+        {"source": 2, "target": 3},
+        {"source": 2, "target": 5},
+        {"source": 3, "target": 7},
+        {"source": 5, "target": 4},
+        {"source": 4, "target": 6}
+    ]},
+
+    "pred_path": {"nodes": [
+        {"smiles": "A", "depth": 0},
+        {"smiles": "B", "depth": 1},
+        {"smiles": "C", "depth": 2},
+        {"smiles": "D", "depth": 2},
+        {"smiles": "E", "depth": 3}
+    ], "links": [
+        {"source": 0, "target": 1},
+        {"source": 1, "target": 2},
+        {"source": 1, "target": 3},
+        {"source": 3, "target": 2},
+        {"source": 2, "target": 4},
+        {"source": 1, "target": 0},
+        {"source": 2, "target": 4}
+    ]},
+    "results": [1.0, 1.0, 1.0]
+  },
+  "joined_products": {"true_path": {"nodes": [
+        {"smiles": "A", "depth": 0},
+        {"smiles": "B", "depth": 1},
+        {"smiles": "C", "depth": 1},
+        {"smiles": "D.E", "depth": 2}
+    ], "links": [
+        {"source": 0, "target": 1},
+        {"source": 0, "target": 2},
+        {"source": 2, "target": 3}
+    ]},
+
+    "pred_path": {"nodes": [
+        {"smiles": "A", "depth": 0},
+        {"smiles": "B", "depth": 1},
+        {"smiles": "C", "depth": 1},
+        {"smiles": "E", "depth": 2},
+        {"smiles": "F", "depth": 2},
+        {"smiles": "G", "depth": 3}
+    ], "links": [
+        {"source": 0, "target": 1},
+        {"source": 0, "target": 2},
+        {"source": 2, "target": 3},
+        {"source": 1, "target": 4},
+        {"source": 4, "target": 5}
+    ]},
+    "results": [0.6667, 0.7692, 0.8333]
+  },
+  "moved_intermediate": {"true_path": {"nodes": [
+        {"smiles": "A", "depth": 0},
+        {"smiles": "B", "depth": 1},
+        {"smiles": "C", "depth": 1},
+        {"smiles": "D", "depth": 2}
+    ], "links": [
+        {"source": 0, "target": 1},
+        {"source": 0, "target": 2},
+        {"source": 1, "target": 2},
+        {"source": 1, "target": 3}
+    ]},
+
+    "pred_path": {"nodes": [
+        {"smiles": "A", "depth": 0},
+        {"smiles": "B", "depth": 1},
+        {"smiles": "C", "depth": 2},
+        {"smiles": "D", "depth": 1}
+    ], "links": [
+        {"source": 0, "target": 1},
+        {"source": 0, "target": 3},
+        {"source": 1, "target": 2},
+        {"source": 3, "target": 1}
+    ]},
+    "results": [0.5, 0.6, 0.75]
+  },
+  "multiple_intermediate": {"true_path": {"nodes": [
+        {"smiles": "A", "depth": 0},
+        {"smiles": "B", "depth": 1},
+        {"smiles": "C", "depth": 2}
+    ], "links": [
+        {"source": 0, "target": 1},
+        {"source": 1, "target": 2}
+    ]},
+
+    "pred_path": {"nodes": [
+        {"smiles": "A", "depth": 0},
+        {"smiles": "B", "depth": 3},
+        {"smiles": "D", "depth": 1},
+        {"smiles": "E", "depth": 2}
+    ], "links": [
+        {"source": 0, "target": 2},
+        {"source": 2, "target": 3},
+        {"source": 3, "target": 1}
+    ]},
+    "results": [0.6667, 1.0, 0.6667]
+  }
+}

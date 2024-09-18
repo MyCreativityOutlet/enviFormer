@@ -1,0 +1,15 @@
+--extra-index-url https://download.pytorch.org/whl/cu121
+py4j
+torch
+torchvision
+torchaudio
+lightning
+pandas
+scikit-learn
+joblib
+tqdm
+rdkit
+nutree
+matplotlib
+tensorboard
+envipath-python
