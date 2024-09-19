@@ -39,21 +39,23 @@ This script will perform cross validation on the pretrained enviFormer model.
 It needs to be given one positional command line argument indicating which experiment to run.
 
 The available options are:
-- `baseline_soil`
-- `baseline_bbd`
-- `baseline_sludge`
-- `soil`
-- `bbd`
-- `sludge`
-- `leave_soil`
-- `leave_bbd`
-- `leave_sludge`
-- `soil_add_bbd`
-- `soil_add_sludge`
-- `bbd_add_soil`
-- `bbd_add_sludge`
-- `sludge_add_soil`
-- `sludge_add_bbd`
+- `baseline_soil` Do not perform any fine-tuning instead simply test on the Soil dataset.
+- `baseline_bbd` Do not perform any fine-tuning instead simply test on the BBD dataset.
+- `baseline_sludge` Do not perform any fine-tuning instead simply test on the Sludge dataset.
+- `soil` Fine tune on the Soil dataset, test on the Soil dataset.
+- `bbd` Fine tune on the BBD dataset, test on the BBD dataset.
+- `sludge` Fine tune on the Sludge dataset, test on the Sludge dataset.
+- `leave_soil` Fine tune on the BBD and Sludge datasets, test on the Soil dataset.
+- `leave_bbd` Fine tune on the Soil and Sludge datasets, test on the BBD dataset.
+- `leave_sludge` Fine tune on the Soil and BBD datasets, test on the Sludge dataset.
+- `soil_add_bbd` Fine tune on the Soil and BBD datasets, test on the Soil dataset.
+- `soil_add_sludge` Fine tune on the Soil and Sludge datasets, test on the Soil dataset.
+- `bbd_add_soil` Fine tune on the BBD and Soil datasets, test on the BBD dataset.
+- `bbd_add_sludge` Fine tune on the BBD and Sludge datasets, test on the BBD dataset.
+- `sludge_add_soil` Fine tune on the Sludge and Soil datasets, test on the Sludge dataset.
+- `sludge_add_bbd` Fine tune on the Sludge and BBD datasets, test on the Sludge dataset.
+
+In any case where the train and test dataset are the same they will be appropriately split into train and test sets.
 
 ### EnviRuleExperiments.py
 This script runs the same experiments as `EnviFormerExperiments.py` but using the Ensemble of Classifier Chains model.
@@ -65,10 +67,9 @@ By default, this script will run the list of experiments given in line 140 of th
 ### RunTimeExperiments.py
 This script will measure the runtime performance of a given model. 
 
-There are three command line arguments to be aware of including:
-- `--model-name`
-- `--data-name`
-- `--device`
+There are two command line arguments to be aware of:
+- `--model-name` The options are envirule or EnviFormerModel.
+- `--device` For envirule only the default CPU is available. EnviFormerModel and use CUDA or CPU.
 
 ### CoverageExperiments.py
 This script calculates the coverage of all the methods on each dataset. It does not require any command line arguments.
