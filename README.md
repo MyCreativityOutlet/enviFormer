@@ -11,8 +11,9 @@ It was created using a fork of enviRule and is available [here](https://github.c
 
 This code has been created and confirmed to work with Python 3.11 on Windows 10.
 
-Create a virtual environment with `python -m venv .venv`. Then install the required packages with `pip install -r requirements.txt`.
+Create a virtual environment with `python -m venv .venv`. 
 Make sure the environment is activated with `source .venv/bin/activate` on Linux or `source .venv/Scripts/activate` on Windows.
+Then install the required packages with `pip install -r requirements.txt`.
 
 ## Data Availability
 The three enviPath datasets, Soil, BBD and Sludge are available in the `data/` folder in individual json files.
