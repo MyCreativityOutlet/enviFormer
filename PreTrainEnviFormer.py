@@ -77,8 +77,7 @@ def main(args: Namespace) -> None:
 
 
 if __name__ == "__main__":
-    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"])
     parser = ArgumentParser()
     parser.add_argument("--model_name", type=str, default="EnviFormerModel", help="Valid models include: EnviFormerModel")
     parser.add_argument("--data_name", type=str, default="uspto", help="Which dataset to use, uspto, envipath")
@@ -93,6 +92,9 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=250, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=128, help="Batch size to target")
     parser.add_argument("--weights-dataset", type=str, default="", help="Pretrained weights based on what dataset")
-    parser.add_argument("--preprocessor", type=str, default="envipath", help="Type of preprocessing to use, envipath or rdkit")
-    main(parser.parse_args())
+    try:
+        main(parser.parse_args())
+    except Exception as e:
+        proc.kill()
+        raise e
     proc.kill()

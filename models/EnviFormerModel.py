@@ -2,7 +2,6 @@ import json
 import os
 import random
 import torch
-from rdkit import Chem
 from py4j.java_gateway import JavaGateway
 from models.BaseModel import *
 from torch import nn, Tensor
@@ -10,8 +9,8 @@ from torch.utils.data import DataLoader, TensorDataset
 import math
 from typing import Any
 from torch.nn.utils.rnn import pad_sequence
-from utils.TorchExtensions import process_seq_test_outputs, seq_metrics, beam_decode, PositionalEncoding, FuncLR, decode_mol, remove_special_chars, get_workers
-from utils.FormatData import encode_reactions, get_data_splits, get_loaders, augment_reactions, get_all_envipath_smirks, remove_mapping, encode_mol, get_cannon_func
+from utils.TorchExtensions import process_seq_test_outputs, seq_metrics, beam_decode, PositionalEncoding, FuncLR, decode_mol, get_workers
+from utils.FormatData import encode_reactions, get_data_splits, get_loaders, get_all_envipath_smirks, remove_mapping, encode_mol
 
 
 class EnviFormerModel(BaseModel):
@@ -31,7 +30,6 @@ class EnviFormerModel(BaseModel):
         self.warm_up_steps = config["warm_up"]
         n_layers = config["n_layers"]
         smoothing = config["smoothing"]
-        self.canon_func = get_cannon_func(self.args.preprocessor)
         self.max_len = self.args.max_len + 20 if "max_len" not in kwargs else kwargs["max_len"]
         self.model_config = config
         self.model_outputs = {"train": [], "val": [], "test": []}
@@ -84,7 +82,7 @@ class EnviFormerModel(BaseModel):
                 pred_smiles = []
                 pred_probas = []
                 for j in range(len(sorted_mols[i])):
-                    smiles = decode_mol(sorted_mols[i, j], self.i_to_char, self.args.tokenizer, self.canon_func)
+                    smiles = decode_mol(sorted_mols[i, j], self.i_to_char, self.args.tokenizer)
                     if len(smiles) > 0:
                         pred_smiles.append(smiles)
                         pred_probas.append(sorted_lls[i, j].astype(float))
@@ -151,10 +149,6 @@ class EnviFormerModel(BaseModel):
                     if r not in reactants_set:
                         train.append(reaction)
 
-            if self.args.augment_count != -1:
-                if self.args.preprocessor == "envipath":
-                    raise ValueError(f"Cannot do augmentation with {self.args.preprocessor} augmentation")
-                train = augment_reactions(train, self.args.augment_count, self.args)
             train = encode_reactions(train, self.char_to_i, self.args)
             test = encode_reactions(test, self.char_to_i, self.args)
             val = encode_reactions(val, self.char_to_i, self.args)

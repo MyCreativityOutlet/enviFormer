@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import torch
-from py4j.java_gateway import JavaGateway
+from py4j.java_gateway import JavaGateway, CallbackServerParameters
 import re
 import random
 from sklearn.metrics import auc
@@ -102,8 +102,8 @@ def encode_reactions(data: list, tokenizer: dict, args, dropout: float = 0.0) ->
     y = [None for _ in range(len(data))]
     failed_encoding = 0
     max_len = 0
-    parallel_out = Parallel(n_jobs=get_workers(args.debug), batch_size=2000)(
-        delayed(inner)(reaction, tokenizer, args, dropout, i) for i, reaction in enumerate(tqdm(data)))
+    parallel_out = Parallel(n_jobs=get_workers(args.debug))(
+        delayed(inner)(reaction, tokenizer, args, i) for i, reaction in enumerate(tqdm(data)))
     for p_out in parallel_out:
         if None not in p_out:
             max_len = max(len(p_out[0]), len(p_out[1]), max_len)
@@ -121,74 +121,21 @@ def encode_reactions(data: list, tokenizer: dict, args, dropout: float = 0.0) ->
     return data
 
 
-def inner(reaction: str, tokenizer: dict, args, dropout, batch_num) -> tuple:
+def inner(reaction: str, tokenizer: dict, args, batch_num) -> tuple:
     reactant, product = reaction.split(">>")[:2]
-    enc_r = encode_mol(reactant, tokenizer, args, enclose=False, dropout=dropout)
+    enc_r = encode_mol(reactant, tokenizer, args, enclose=False)
     enc_p = encode_mol(product, tokenizer, args)
     return enc_r, enc_p, reactant, batch_num
 
 
-def augment_reactions(reactions: list[str], augment_target: int, args) -> list[str]:
-    print(f"Augmenting reactions up to {augment_target} times.")
-    n_jobs = get_workers(args.debug)
-    batch_size = min(2000, math.ceil(len(reactions) / n_jobs))
-    results = Parallel(n_jobs=n_jobs, batch_size=batch_size)(delayed(augment_parallel)(reaction, augment_target)
-                                                             for reaction in tqdm(reactions))
-    output = []
-    for result in results:
-        output.extend(result)
-    return output
-
-
-def augment_parallel(reaction: str, augment_target: int = 1) -> list[str]:
-    log_blocker = BlockLogs()
-    reactant, product = reaction.split(">>")[:2]
-    reactant_mol = Chem.MolFromSmiles(reactant)
-    product_mol = Chem.MolFromSmiles(product)
-    list_reactant = [reactant]
-    list_product = [product]
-    attempts = 0
-    random.seed(1)
-    while True:
-        if len(list_reactant) < augment_target + 1:
-            new_reactant = Chem.MolToSmiles(reactant_mol, doRandom=True)
-            if new_reactant not in list_reactant:
-                list_reactant.append(new_reactant)
-
-        if len(list_product) < augment_target + 1:
-            new_product = Chem.MolToSmiles(product_mol, doRandom=True)
-            if new_product not in list_product:
-                list_product.append(new_product)
-        attempts += 1
-        if len(list_reactant) >= augment_target + 1 and len(list_product) >= augment_target + 1:
-            break
-
-        if attempts > augment_target * 10:
-            break
-    new_reactions = set()
-    for reactant, product in zip(list_reactant, list_product):
-        new_reactions.add(reactant + ">>" + product)
-    return list(new_reactions)
-
-
-def canon_smile_rdkit(smile: str, remove_stereochemistry=True) -> str | None:
-    log_blocker = BlockLogs()
-    mol = Chem.MolFromSmiles(smile)
-    if mol is None:
-        return None
-    if remove_stereochemistry:
-        Chem.RemoveStereochemistry(mol)
-    return Chem.MolToSmiles(mol, canonical=True)
-
-
-def canon_smirk(smirk, canon_func):
+def canon_smirk(smirk):
     smirk = smirk.strip()
     reactant, product = smirk.split(">>")[:2]
 
     def canon_r_side(side):
         canon = []
         for r in side.split(">"):
-            c_r = [canon_func(smile) for smile in r.split(".")]
+            c_r = [canon_smile(smile) for smile in r.split(".")]
             c_r = [smile for smile in c_r if smile is not None]
             if len(c_r) > 0:
                 canon.append(".".join(c_r))
@@ -207,17 +154,7 @@ def canon_smirk(smirk, canon_func):
 
 
 def get_uspto_smirks(args) -> list:
-    return load_smirks("data/uspto_stereo/stereo_joined.txt", args)
-
-
-def get_cannon_func(canon_type):
-    if canon_type == "rdkit":
-        preprocessor = canon_smile_rdkit
-    elif canon_type == "envipath":
-        preprocessor = canon_smile_envipath
-    else:
-        raise ValueError(f"{canon_type} is invalid canonical function")
-    return preprocessor
+    return load_smirks("data/uspto/stereo_joined.txt", args)
 
 
 def load_smirks(file_name: str, args) -> list:
@@ -226,9 +163,7 @@ def load_smirks(file_name: str, args) -> list:
     if args.debug:
         lines = lines[:2000]
     n_jobs = get_workers(args.debug)
-    batch_size = min(2000, math.ceil(len(lines) / n_jobs))
-    preprocessor = get_cannon_func(args.preprocessor)
-    results = Parallel(n_jobs=n_jobs, batch_size=batch_size)(delayed(canon_smirk)(line, preprocessor)
+    results = Parallel(n_jobs=n_jobs)(delayed(canon_smirk)(line)
                                                              for line in tqdm(lines, desc="Preprocessing Reactions"))
     result_set = set()
     output = []
@@ -255,10 +190,8 @@ def get_reaction_smirks(package_name: str, args) -> list:
     with open(f"data/envipath/{package_name}.json") as d_file:
         data = json.load(d_file)
     n_jobs = get_workers(args.debug)
-    batch_size = 200 if n_jobs > 1 else 1
-    canon_func = get_cannon_func(args.preprocessor)
     data = [d["smirks"] for d in data["reactions"]]
-    results = Parallel(n_jobs=n_jobs, batch_size=batch_size)(delayed(canon_smirk)(r, canon_func) for r in tqdm(data))
+    results = Parallel(n_jobs=n_jobs)(delayed(canon_smirk)(r) for r in tqdm(data))
     r_set = set()
     reactions = []
     for r in results:
@@ -342,9 +275,8 @@ def get_data_splits(data: list, train_ratio: float = None) -> tuple[list, list, 
     return train, val, test
 
 
-def canon_smile_envipath(smile: str, gateway=None) -> str:
-    if gateway is None:
-        gateway = JavaGateway()
+def canon_smile(smile: str) -> str:
+    gateway = JavaGateway()
     return gateway.entry_point.standardSmiles(smile)
 
 
@@ -511,7 +443,7 @@ def reactions_from_pathways(pathways):
     return reactions_list
 
 
-def standardise_pathways(pathways, canon_func):
+def standardise_pathways(pathways):
     for pathway in tqdm(pathways, desc="Fixing pathway edges and canonicalising SMILES"):
         edges_list = pathway["links"]
         nodes_list = pathway["nodes"]
@@ -544,7 +476,7 @@ def standardise_pathways(pathways, canon_func):
             edges_list[i]["target"] = target_changes[i]
         for node in pathway["nodes"]:
             if "smiles" in node:
-                node["smiles"] = canon_func(node["smiles"])
+                node["smiles"] = canon_smile(node["smiles"])
 
     return pathways
 
@@ -556,8 +488,7 @@ def get_all_pathways(args):
         with open(f"data/envipath/{file}.json") as file:
             data = json.load(file)
         pathways.extend(data["pathways"])
-    canon_func = get_cannon_func(args.preprocessor)
-    pathways = standardise_pathways(pathways, canon_func)
+    pathways = standardise_pathways(pathways)
     return pathways
 
 
@@ -574,8 +505,7 @@ def pathways_split(args):
     pathways = data["pathways"]
 
     # Fix the pathways, removing edges with no smiles and depth 0, also canon all SMILES
-    canon_func = get_cannon_func(args.preprocessor)
-    pathways = standardise_pathways(pathways, canon_func)
+    pathways = standardise_pathways(pathways)
 
     # Create the folds
     folds = []

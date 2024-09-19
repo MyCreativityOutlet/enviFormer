@@ -96,8 +96,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"])
     parser = ArgumentParser()
     parser.add_argument("--model-name", type=str, default="envirule")
     parser.add_argument("--data-name", type=str, default="")
@@ -106,9 +105,11 @@ if __name__ == "__main__":
     parser.add_argument("--max-len", type=int, default=256, help="Maximum encoded length to consider")
     parser.add_argument("--min-len", type=int, default=0, help="Minimum encoded length to consider")
     parser.add_argument("--batch-size", type=int, default=128, help="Batch size to target")
-    parser.add_argument("--preprocessor", type=str, default="envipath",
-                        help="Type of preprocessing to use, envipath or rdkit")
     parser.add_argument("--device", type=str, default="cpu")
     arguments = parser.parse_args()
-    main(arguments)
+    try:
+        main(arguments)
+    except Exception as e:
+        proc.kill()
+        raise e
     proc.kill()

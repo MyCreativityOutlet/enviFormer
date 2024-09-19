@@ -64,14 +64,16 @@ def main(args):
 
 
 if __name__ == "__main__":
-    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"])
     parser = ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument("--tokenizer", type=str, default="regex")
     parser.add_argument("--max-len", type=int, default=256, help="Maximum encoded length to consider")
     parser.add_argument("--min-len", type=int, default=0, help="Minimum encoded length to consider")
-    parser.add_argument("--preprocessor", type=str, default="envipath", help="Type of preprocessing to use, envipath or rdkit")
     arguments = parser.parse_args()
-    main(arguments)
+    try:
+        main(arguments)
+    except Exception as e:
+        proc.kill()
+        raise e
     proc.kill()

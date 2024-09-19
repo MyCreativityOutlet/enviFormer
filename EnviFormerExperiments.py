@@ -39,8 +39,11 @@ def setup_train(args, train_data):
                             persistent_workers=True)
     trainer = build_trainer(args, config)
     print("Beginning training")
-    ckpt_path = f"results/{args.model_name}/{args.weights_dataset}_{args.tokenizer}_weights.ckpt" \
-        if args.weights_dataset else None
+    if args.weights_dataset:
+        ckpt_path = f"results/{args.model_name}/{args.weights_dataset}_{args.tokenizer}/checkpoints/"
+        ckpt_path = os.path.join(ckpt_path, [f for f in os.listdir(ckpt_path) if ".ckpt" in f][0])
+    else:
+        ckpt_path = None
     if "baseline" in args.data_name:
         model = model.__class__.load_from_checkpoint(ckpt_path, config=config, vocab=tokenizer, p_args=args)
     else:
@@ -107,7 +110,6 @@ def train_eval_single_multi(args):
     if os.path.exists(results_directory):
         folds = load_folds(results_directory)
     elif "leave" in args.data_name:
-        canon_func = get_cannon_func(args.preprocessor)
         if "soil" in args.data_name:
             train = get_all_envipath_smirks(args, ["bbd", "sludge"])
             test = get_raw_envipath("soil")
@@ -119,8 +121,8 @@ def train_eval_single_multi(args):
             test = get_raw_envipath("sludge")
         else:
             raise ValueError(f"Can't use {args.data_name} unknown dataset type")
-        test_pathways = standardise_pathways(test["pathways"], canon_func)
-        test_reactions = [canon_smirk(r["smirks"], canon_func) for r in test["reactions"]]
+        test_pathways = standardise_pathways(test["pathways"])
+        test_reactions = [canon_smirk(r["smirks"]) for r in test["reactions"]]
         test_reactions = [r for r in test_reactions if r is not None and r.split(">>")[-1] not in co2]
         folds = [[train, test_pathways, test_reactions]] * 1
     elif "add" in args.data_name:
@@ -193,8 +195,7 @@ def train_eval_single_multi(args):
 
 
 if __name__ == "__main__":
-    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"])
     parser = ArgumentParser()
     parser.add_argument("data_name", type=str, default="soil", help="Which dataset to use, uspto or envipath")
     parser.add_argument("--model-name", type=str, default="EnviFormerModel",
@@ -207,19 +208,21 @@ if __name__ == "__main__":
     parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs to use")
     parser.add_argument("--epochs", type=int, default=200, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=64, help="Batch size to target")
-    parser.add_argument("--weights-dataset", type=str, default="", help="Pretrained weights based on what dataset")
+    parser.add_argument("--weights-dataset", type=str, default="uspto", help="Pretrained weights based on what dataset")
     parser.add_argument("--test-mapping", action="store_true",
                         help="Whether to remove atom mapping before calculating accuracy")
     parser.add_argument("--score-all", action="store_true", help="Whether to group same reactants together")
     parser.add_argument("--run-clusters", action="store_true")
-    parser.add_argument("--preprocessor", type=str, default="envipath",
-                        help="Type of preprocessing to use, envipath or rdkit")
     arguments = parser.parse_args()
-    if arguments.data_name == "multi":
-        data_names = ["soil_add_sludge", "bbd_add_sludge", "sludge_add_soil", "sludge_add_bbd"]
-        for name in data_names:
-            arguments.data_name = name
+    try:
+        if arguments.data_name == "multi":
+            data_names = ["soil_add_sludge", "bbd_add_sludge", "sludge_add_soil", "sludge_add_bbd"]
+            for name in data_names:
+                arguments.data_name = name
+                train_eval_single_multi(arguments)
+        else:
             train_eval_single_multi(arguments)
-    else:
-        train_eval_single_multi(arguments)
+    except (Exception, KeyboardInterrupt) as e:
+        proc.kill()
+        raise e
     proc.kill()

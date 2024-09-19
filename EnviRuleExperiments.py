@@ -13,7 +13,7 @@ import pickle
 
 class EnviRuleModel:
 
-    def __init__(self, rules, dataset_name, model_name, fold, args, rdkit_reaction=False, canon_func_name="envipath"):
+    def __init__(self, rules, dataset_name, model_name, fold, args, rdkit_reaction=False):
         self.classifier = None
         self.rules = rules
         self.dataset_name = dataset_name
@@ -21,8 +21,6 @@ class EnviRuleModel:
         self.fold = fold
         self.args = args
         self.rdkit_reaction = rdkit_reaction
-        self.canon_func = get_cannon_func(canon_func_name)
-        self.canon_func_name = canon_func_name
         clf_path = f"results/{self.model_name}/{self.dataset_name}/fold_{self.fold}_clf.txt"
         if os.path.exists(clf_path):
             file = open(clf_path, "rb")
@@ -51,8 +49,7 @@ class EnviRuleModel:
                         match = False
                         for candidate_products in pred_products:
                             candidate_products = candidate_products.split(".")
-                            if self.canon_func_name != "envipath":
-                                candidate_products = {self.canon_func(c) for c in candidate_products}
+                            candidate_products = {canon_smile(c) for c in candidate_products}
                             pred_set = set(candidate_products)
                             if len(true_products - pred_set) == 0:
                                 match = True
@@ -137,7 +134,7 @@ def main(args):
         transformer_folders = [args.data_name]
     else:
         # Add experiments to this line to run multiple experiments
-        transformer_folders = ["leave_sludge"]
+        transformer_folders = ["soil"]
     transformer_folders = [transformer_base + t + "_regex/" for t in transformer_folders]
 
     method_name = "envipath" if args.existing_rules else "envirule"
@@ -152,7 +149,6 @@ def main(args):
         single_test_output = {}
         failed_reactions = {}
         thresholds = [t for t in get_thresholds().keys()]
-        canon_func = get_cannon_func(args.preprocessor)
         # Run enviRule on every fold for the current dataset
         if args.debug:
             fold_splits = fold_splits[:2]
@@ -162,14 +158,14 @@ def main(args):
                 fold_data = json.load(fold_file)
             train_data = []
             for smirk in fold_data["train"]:
-                smirk = canon_smirk(smirk, canon_func)
+                smirk = canon_smirk(smirk)
                 if smirk is not None:
                     train_data.append(smirk)
             test_pathways = fold_data["test"]
-            test_pathways = standardise_pathways(test_pathways, canon_func)
+            test_pathways = standardise_pathways(test_pathways)
             test_reactions = []
             for smirk in fold_data["test_reactions"]:
-                smirk = canon_smirk(smirk, canon_func)
+                smirk = canon_smirk(smirk)
                 if smirk is not None:
                     test_reactions.append(smirk)
             os.makedirs(f"data/{method_name}/{dataset_name}", exist_ok=True)
@@ -187,7 +183,7 @@ def main(args):
                     else:
                         failed_reactions[i].append(reaction)
             train_data = train_data_filtered
-            print(f"Failed on {len(failed_reactions[i])} reactions, dataset {dataset_name}.\n{failed_reactions[i]}")
+            print(f"Ignoring {len(failed_reactions[i])} reactions with issues, dataset {dataset_name}.")
             if not os.path.exists(rules_path) and not args.existing_rules:
                 generalizeIgnoreHydrogen = False
                 radius = 1
@@ -271,8 +267,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"])
     parser = ArgumentParser()
     parser.add_argument("-ss", "--skip-single", action="store_true")
     parser.add_argument("-sm", "--skip-multi", action="store_true")
@@ -281,8 +276,10 @@ if __name__ == "__main__":
     parser.add_argument("--model-name", type=str, default="envirule")
     parser.add_argument("--data-name", type=str, default="")
     parser.add_argument("--tokenizer", type=str, default="regex")
-    parser.add_argument("--preprocessor", type=str, default="envipath",
-                        help="Type of preprocessing to use, envipath or rdkit")
     arguments = parser.parse_args()
-    main(arguments)
+    try:
+        main(arguments)
+    except Exception as e:
+        proc.kill()
+        raise e
     proc.kill()
