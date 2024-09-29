@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 from PreTrainEnviFormer import setup_model, build_trainer
 from utils.EvalFunctions import predict_singlegen, predict_multigen
 from utils.FormatData import *
+from utils.EnviPathDownloader import check_envipath_data
 
 
 def setup_train(args, train_data):
@@ -104,6 +105,7 @@ def train_eval_single_multi(args):
     single_test_output = {}
     thresholds = get_thresholds(value_type=set)
     results_directory = f"results/{args.model_name}/{args.data_name}_{args.tokenizer}"
+    check_envipath_data()
     curve_directory = "/".join(results_directory.split("/")[1:])
     extra_data = []
     co2 = {"O=C=O", "C(=O)=O"}

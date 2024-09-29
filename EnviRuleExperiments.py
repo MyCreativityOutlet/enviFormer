@@ -1,6 +1,7 @@
 from sklearn.ensemble import RandomForestClassifier
 from utils.EvalFunctions import predict_multigen, predict_singlegen
 from utils.FormatData import *
+from utils.EnviPathDownloader import check_envipath_data
 from argparse import ArgumentParser
 from EnviFormerExperiments import mean_dicts
 from py4j.java_gateway import JavaGateway
@@ -130,6 +131,7 @@ class EnviRuleModel:
 
 def main(args):
     transformer_base = "results/EnviFormerModel/"
+    check_envipath_data()
     if args.data_name != "":
         transformer_folders = [args.data_name]
     else:

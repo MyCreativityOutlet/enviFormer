@@ -12,3 +12,4 @@ rdkit
 nutree
 matplotlib
 tensorboard
+envipath-python

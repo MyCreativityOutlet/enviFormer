@@ -8,6 +8,7 @@ import subprocess
 from argparse import ArgumentParser
 from models.EnviFormerModel import EnviFormerModel
 from EnviRuleExperiments import EnviRuleModel
+from utils.EnviPathDownloader import check_envipath_data
 from utils.FormatData import get_all_envipath_smirks, get_all_pathways
 from utils.EvalFunctions import predict_multigen
 
@@ -86,6 +87,7 @@ def plot_results(results, save_folder):
 
 def main(args):
     save_folder = f"results/{args.model_name}/runtime_{args.device}"
+    check_envipath_data()
     os.makedirs(save_folder, exist_ok=True)
     if not os.path.exists(os.path.join(save_folder, "times.json")):
         run_experiment(args, save_folder)
