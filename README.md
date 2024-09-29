@@ -1,6 +1,7 @@
 # enviFormer
 
-Code for the paper titled XXXXXX published by Brydon *et al.* available [here]().
+Code for the paper titled "Predictive Modeling of Biodegradation Pathways
+Using Transformer Architectures" published by Brydon *et al.* available [here]().
 
 ## Install
 Clone this repository with `git clone https://github.com/MyCreativityOutlet/enviFormer`.
