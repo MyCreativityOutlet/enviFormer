@@ -203,9 +203,7 @@ def main(args):
                             if rule["identifier"] == "simple-rule":
                                 rules.append(rule["smirks"])
                     if "soil" in dataset_name or "leave" in dataset_name:
-                        with open("data/envipath/Eawag-Soil (only new set of rules).json") as file:
-                            soil_rules = json.load(file)
-                        for rule in soil_rules["rules"]:
+                        for rule in get_raw_envipath("soil")["rules"]:
                             if rule["identifier"] == "simple-rule":
                                 rules.append(rule["smirks"])
                     if len(rules) == 0:
