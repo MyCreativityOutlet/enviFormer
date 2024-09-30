@@ -19,7 +19,7 @@ Then install the required packages with `pip install -r requirements.txt`.
 ## Data Availability
 The three enviPath datasets, Soil, BBD and Sludge are available in the `data/` folder in individual json files.
 
-The United States Patent & Trademark Office (USPTO) dataset is available [here]().
+The United States Patent & Trademark Office (USPTO) dataset is available [here](https://doi.org/10.5281/zenodo.13858535).
 
 These are all the exact files used to run experiments in the paper.
 
@@ -71,7 +71,7 @@ This script will measure the runtime performance of a given model.
 
 There are two command line arguments to be aware of:
 - `--model-name` The options are envirule or EnviFormerModel.
-- `--device` For envirule only the default CPU is available. EnviFormerModel and use CUDA or CPU.
+- `--device` For envirule only the default CPU is available. EnviFormerModel can use CUDA or CPU.
 
 ### CoverageExperiments.py
 This script calculates the coverage of all the methods on each dataset. It does not require any command line arguments.
