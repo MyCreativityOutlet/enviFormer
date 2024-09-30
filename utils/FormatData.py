@@ -1,9 +1,26 @@
+"""
+EnviFormer a transformer based method for the prediction of biodegradation products and pathways
+Copyright (C) 2024  Liam Brydon
+Contact at: lbry121@aucklanduni.ac.nz
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
 import os
 import numpy as np
 import torch
-from py4j.java_gateway import JavaGateway, CallbackServerParameters
+from py4j.java_gateway import JavaGateway
 import re
-import random
 from sklearn.metrics import auc
 import matplotlib.pyplot as plt
 import json
@@ -11,12 +28,10 @@ from torch.nn.utils.rnn import pad_sequence
 from torch import Tensor, tensor
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
-import math
 from sklearn.model_selection import KFold
 from joblib import Parallel, delayed
 from sklearn.model_selection import train_test_split
 from rdkit import Chem
-from rdkit.rdBase import BlockLogs
 from typing import Iterable
 
 
