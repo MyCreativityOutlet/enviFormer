@@ -1,7 +1,7 @@
 # enviFormer
 
 Code for the paper titled "Predictive Modeling of Biodegradation Pathways
-Using Transformer Architectures" published by Brydon *et al.* available [here]().
+Using Transformer Architectures" published by Brydon *et al.* available [here](https://doi.org/10.21203/rs.3.rs-5200860/v1).
 
 ## Install
 Clone this repository with `git clone https://github.com/MyCreativityOutlet/enviFormer`.
@@ -33,7 +33,7 @@ In order to recreate the results presented in the paper we provide the following
 
 ### PreTrainEnviFormer.py
 This script will perform the pretraining of the enviFormer model using the USPTO dataset.
-Pretraining takes approximately two days on an RTX 4090 as such we provide the pretrained model and associated files we used, available [here]().
+Pretraining takes approximately two days on an RTX 4090 as such we provide the pretrained model and associated files we used, available [here](https://doi.org/10.5281/zenodo.13858534).
 Unzip the folder and place its contents in the following directory `results/EnviFormerModel/uspto_regex/`.
 
 ### EnviFormerExperiments.py
