@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import torch.cuda
 from argparse import ArgumentParser
 import subprocess
+import random
 import pytorch_lightning as pl
 from PreTrainEnviFormer import setup_model, build_trainer
 from utils.EvalFunctions import predict_singlegen, predict_multigen
