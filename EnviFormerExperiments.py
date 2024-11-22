@@ -24,7 +24,7 @@ import pytorch_lightning as pl
 from PreTrainEnviFormer import setup_model, build_trainer
 from utils.EvalFunctions import predict_singlegen, predict_multigen
 from utils.FormatData import *
-from utils.EnviPathDownloader import check_envipath_data
+from EnviPathDownloader import check_envipath_data
 
 
 def setup_train(args, train_data):

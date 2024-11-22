@@ -17,7 +17,10 @@ Make sure the environment is activated with `source .venv/bin/activate` on Linux
 Then install the required packages with `pip install -r requirements.txt`.
 
 ## Data Availability
-The three enviPath datasets, Soil, BBD and Sludge are available in the `data/` folder in individual json files.
+The three enviPath datasets, Soil, BBD and Sludge need to be downloaded. This will be done automatically if an experiment is started that requires the data and the data has not been found in the correct place.
+To download the data without running an experiment run `EnviPathDownloader.py`. 
+
+In either case the data will be saved to the `data/envipath` folder in json files.
 
 The United States Patent & Trademark Office (USPTO) dataset is available [here](https://doi.org/10.5281/zenodo.13858535).
 

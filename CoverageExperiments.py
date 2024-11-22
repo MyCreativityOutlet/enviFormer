@@ -17,7 +17,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 from utils.FormatData import get_all_envipath_smirks, get_raw_envipath, run_reaction, encode_mol
-from utils.EnviPathDownloader import check_envipath_data
+from EnviPathDownloader import check_envipath_data
 from py4j.java_gateway import JavaGateway
 import os
 import json

@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from sklearn.ensemble import RandomForestClassifier
 from utils.EvalFunctions import predict_multigen, predict_singlegen
 from utils.FormatData import *
-from utils.EnviPathDownloader import check_envipath_data
+from EnviPathDownloader import check_envipath_data
 from argparse import ArgumentParser
 from EnviFormerExperiments import mean_dicts
 from py4j.java_gateway import JavaGateway

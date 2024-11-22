@@ -27,7 +27,7 @@ import subprocess
 from argparse import ArgumentParser
 from models.EnviFormerModel import EnviFormerModel
 from EnviRuleExperiments import EnviRuleModel
-from utils.EnviPathDownloader import check_envipath_data
+from EnviPathDownloader import check_envipath_data
 from utils.FormatData import get_all_envipath_smirks, get_all_pathways
 from utils.EvalFunctions import predict_multigen
 

@@ -63,7 +63,11 @@ def download_envipath(save_path, force_download=False):
 
 def check_envipath_data():
     envipath_data_path = "data/envipath"
-    if any(not os.path.exists(f"data/envipath/{package}.json") for package in ["soil", 'bbd', 'sludge']):
+    if any(not os.path.exists(os.path.join(envipath_data_path, f"{package}.json")) for package in ["soil", 'bbd', 'sludge']):
         os.makedirs(envipath_data_path, exist_ok=True)
         download_envipath(envipath_data_path)
     return
+
+
+if __name__ == "__main__":
+    check_envipath_data()
