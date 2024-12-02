@@ -510,14 +510,18 @@ def get_all_pathways(args):
 def pathways_split(args):
     pathway_file = ""
     if "soil" in args.data_name:
-        pathway_file = "soil"
+        pathway_file = ["soil"]
     if "bbd" in args.data_name:
-        pathway_file = "bbd"
+        pathway_file = ["bbd"]
     if "sludge" in args.data_name:
-        pathway_file = "sludge"
-    with open(f"data/envipath/{pathway_file}.json") as file:
-        data = json.load(file)
-    pathways = data["pathways"]
+        pathway_file = ["sludge"]
+    if "all" in args.data_name:
+        pathway_file = ["soil", "bbd", "sludge"]
+    pathways = []
+    for file in pathway_file:
+        with open(f"data/envipath/{file}.json") as file:
+            data = json.load(file)
+        pathways.extend(data["pathways"])
 
     # Fix the pathways, removing edges with no smiles and depth 0, also canon all SMILES
     pathways = standardise_pathways(pathways)
