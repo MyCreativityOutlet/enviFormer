@@ -84,11 +84,11 @@ class EnviFormerModel(BaseModel):
                     print(f"Can't encode", smiles[i])
             enc_smiles = [enc for enc in enc_smiles if enc is not None]
             enc_smiles = pad_sequence(enc_smiles, batch_first=True, padding_value=self.pad_id)
-            loader = DataLoader(TensorDataset(enc_smiles), batch_size=self.args.batch_size,
-                                num_workers=get_workers(self.args.debug))
+            dataset = TensorDataset(enc_smiles)
             sorted_mols = []
             sorted_lls = []
-            for batch in loader:
+            for batch_i in range(0, len(dataset), self.args.batch_size // 2):
+                batch = dataset[batch_i: batch_i + self.args.batch_size // 2]
                 enc_batch = batch[0].to(self.device)
                 sorted_mols_b, sorted_lls_b, _ = beam_decode(self, enc_batch, num_beams=num_beams)
                 sorted_mols.extend(sorted_mols_b)
