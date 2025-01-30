@@ -121,7 +121,9 @@ def initialise_pathway(pathway):
 
 def compare_pathways(data_pathway, pred_pathway):
     """Compare two pathways for multi-gen evaluation.
-    It is assumed the smiles in both pathways have been standardised in the same manner."""
+    It is assumed the smiles in both pathways have been standardised in the same manner.
+    Requires the input pathways to be Networkx graphs,
+    this can be created from the graph_from_envipath or graph_from_serializable functions"""
     data_pathway = initialise_pathway(data_pathway)
     pred_pathway = initialise_pathway(pred_pathway)
     start_and_end_nodes = find_intermediates(data_pathway, pred_pathway)
