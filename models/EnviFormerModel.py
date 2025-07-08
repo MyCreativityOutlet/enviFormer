@@ -29,7 +29,8 @@ import math
 from typing import Any
 from torch.nn.utils.rnn import pad_sequence
 from utils.TorchExtensions import process_seq_test_outputs, seq_metrics, beam_decode, PositionalEncoding, FuncLR, decode_mol, get_workers
-from utils.FormatData import encode_reactions, get_data_splits, get_loaders, get_all_envipath_smirks, remove_mapping, encode_mol
+from utils.FormatData import encode_reactions, get_data_splits, get_loaders, get_all_envipath_smirks, remove_mapping, \
+    encode_mol, get_canon_func
 
 
 class EnviFormerModel(BaseModel):
@@ -40,13 +41,14 @@ class EnviFormerModel(BaseModel):
         else:
             self.char_to_i, self.i_to_char = vocab.vocabulary, vocab.decoder_vocabulary
         self.java_gateway = JavaGateway()
-        self.save_path = f"results/{self.args.model_name}/{self.args.data_name}_{self.args.tokenizer}"
+        self.save_path = f"results/{self.args.model_name}/{self.args.data_name}_{self.args.preprocessor}"
         os.makedirs(self.save_path, exist_ok=True)
         self.pad_id = self.char_to_i["[nop]"]
         self.d_model, n_heads, d_feedforward = config["d_model"], config["n_heads"], config["d_feedforward"]
         dropout = config["dropout"]
         self.embed_dropout = config["embed_dropout"]
         self.warm_up_steps = config["warm_up"]
+        self.canon_func = get_canon_func(p_args)
         n_layers = config["n_layers"]
         smoothing = config["smoothing"]
         self.max_len = self.args.max_len + 20 if "max_len" not in kwargs else kwargs["max_len"]
@@ -101,7 +103,7 @@ class EnviFormerModel(BaseModel):
                 pred_smiles = []
                 pred_probas = []
                 for j in range(len(sorted_mols[i])):
-                    smiles = decode_mol(sorted_mols[i, j], self.i_to_char, self.args.tokenizer)
+                    smiles = decode_mol(sorted_mols[i, j], self.i_to_char, self.args.tokenizer, self.canon_func)
                     if len(smiles) > 0:
                         pred_smiles.append(smiles)
                         pred_probas.append(sorted_lls[i, j].astype(float))

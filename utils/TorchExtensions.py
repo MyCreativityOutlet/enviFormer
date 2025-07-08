@@ -27,7 +27,7 @@ import math
 from tqdm import tqdm
 from rdkit.rdBase import BlockLogs
 from statistics import mean
-from utils.FormatData import precision_recall_threshold, get_workers, canon_smile
+from utils.FormatData import precision_recall_threshold, get_workers, get_canon_func
 from functools import partial
 
 
@@ -295,7 +295,7 @@ def beam_decode(model, x: Tensor, num_beams: int = 8):
     return sorted_mols, sorted_lls, sorted_all_lls
 
 
-def decode_mol(array, i_to_char, tokenizer_type):
+def decode_mol(array, i_to_char, tokenizer_type, canon_func):
     if tokenizer_type == "regex":
         decoded = [i_to_char[i] for i in array]
         smiles = "".join(decoded)
@@ -305,7 +305,7 @@ def decode_mol(array, i_to_char, tokenizer_type):
     mols = smiles.split(".")
     canon_mols = []
     for mol in mols:
-        canon = canon_smile(mol)
+        canon = canon_func(mol)
         if canon is not None and len(canon) > 0:
             canon_mols.append(canon)
     return ".".join(canon_mols)
@@ -316,13 +316,14 @@ def process_output(inputs, predict, actual, score, i_to_char, args):
     actual = actual.numpy()
     inputs = inputs.numpy()
     score = score.numpy()
+    canon_func = get_canon_func(args)
     if predict.ndim == 1:
-        m_smiles = [decode_mol(predict, i_to_char, args.tokenizer)]
+        m_smiles = [decode_mol(predict, i_to_char, args.tokenizer, canon_func)]
     else:
-        m_smiles = [decode_mol(beam, i_to_char, args.tokenizer)
+        m_smiles = [decode_mol(beam, i_to_char, args.tokenizer, canon_func)
                     for beam in predict]
-    a_smiles = decode_mol(actual, i_to_char, args.tokenizer)
-    input_smiles = decode_mol(inputs, i_to_char, args.tokenizer)
+    a_smiles = decode_mol(actual, i_to_char, args.tokenizer, canon_func)
+    input_smiles = decode_mol(inputs, i_to_char, args.tokenizer, canon_func)
     return input_smiles, m_smiles, a_smiles, score.tolist()
 
 

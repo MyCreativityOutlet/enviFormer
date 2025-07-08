@@ -143,14 +143,14 @@ def inner(reaction: str, tokenizer: dict, args, batch_num) -> tuple:
     return enc_r, enc_p, reactant, batch_num
 
 
-def canon_smirk(smirk):
+def canon_smirk(smirk, canon_func):
     smirk = smirk.strip()
     reactant, product = smirk.split(">>")[:2]
 
     def canon_r_side(side):
         canon = []
         for r in side.split(">"):
-            c_r = [canon_smile(smile) for smile in r.split(".")]
+            c_r = [canon_func(smile) for smile in r.split(".")]
             c_r = [smile for smile in c_r if smile is not None]
             if len(c_r) > 0:
                 canon.append(".".join(c_r))
@@ -178,7 +178,7 @@ def load_smirks(file_name: str, args) -> list:
     if args.debug:
         lines = lines[:2000]
     n_jobs = get_workers(args.debug)
-    results = Parallel(n_jobs=n_jobs)(delayed(canon_smirk)(line)
+    results = Parallel(n_jobs=n_jobs)(delayed(canon_smirk)(line, get_canon_func(args))
                                                              for line in tqdm(lines, desc="Preprocessing Reactions"))
     result_set = set()
     output = []
@@ -187,6 +187,15 @@ def load_smirks(file_name: str, args) -> list:
             output.append(r)
             result_set.add(r)
     return output
+
+
+def get_canon_func(args):
+    if args.preprocessor == "envipath":
+        return canon_smile_envipath
+    elif args.preprocessor == "rdkit":
+        return canon_smile_rdkit
+    else:
+        raise ValueError(f"Unknown preprocessor: {args.preprocessor}")
 
 
 def split_data(data: list, split: float = None) -> tuple[Iterable, Iterable, Iterable]:
@@ -206,7 +215,7 @@ def get_reaction_smirks(package_name: str, args) -> list:
         data = json.load(d_file)
     n_jobs = get_workers(args.debug)
     data = [d["smirks"] for d in data["reactions"]]
-    results = Parallel(n_jobs=n_jobs)(delayed(canon_smirk)(r) for r in tqdm(data))
+    results = Parallel(n_jobs=n_jobs)(delayed(canon_smirk)(r, get_canon_func(args)) for r in tqdm(data))
     r_set = set()
     reactions = []
     for r in results:
@@ -290,9 +299,16 @@ def get_data_splits(data: list, train_ratio: float = None) -> tuple[list, list, 
     return train, val, test
 
 
-def canon_smile(smile: str) -> str:
+def canon_smile_envipath(smile: str) -> str:
     gateway = JavaGateway()
     return gateway.entry_point.standardSmiles(smile)
+
+
+def canon_smile_rdkit(smile: str) -> str:
+    mol = Chem.MolFromSmiles(smile)
+    if mol is None:
+        return ""
+    return Chem.MolToSmiles(mol)
 
 
 def get_dataset(args, num_rules: int = 1) -> tuple[list, tuple[dict, dict]]:
@@ -458,7 +474,7 @@ def reactions_from_pathways(pathways):
     return reactions_list
 
 
-def standardise_pathways(pathways):
+def standardise_pathways(pathways, canon_func):
     for pathway in tqdm(pathways, desc="Fixing pathway edges and canonicalising SMILES"):
         edges_list = pathway["links"]
         nodes_list = pathway["nodes"]
@@ -491,7 +507,7 @@ def standardise_pathways(pathways):
             edges_list[i]["target"] = target_changes[i]
         for node in pathway["nodes"]:
             if "smiles" in node:
-                node["smiles"] = canon_smile(node["smiles"])
+                node["smiles"] = canon_func(node["smiles"])
 
     return pathways
 
@@ -499,11 +515,12 @@ def standardise_pathways(pathways):
 def get_all_pathways(args):
     files = ["soil", "bbd", "sludge"]
     pathways = []
+    canon_func = get_canon_func(args)
     for file in files:
         with open(f"data/envipath/{file}.json") as file:
             data = json.load(file)
         pathways.extend(data["pathways"])
-    pathways = standardise_pathways(pathways)
+    pathways = standardise_pathways(pathways, canon_func)
     return pathways
 
 
@@ -524,7 +541,7 @@ def pathways_split(args):
         pathways.extend(data["pathways"])
 
     # Fix the pathways, removing edges with no smiles and depth 0, also canon all SMILES
-    pathways = standardise_pathways(pathways)
+    pathways = standardise_pathways(pathways, get_canon_func(args))
 
     # Create the folds
     folds = []

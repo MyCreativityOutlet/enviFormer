@@ -31,7 +31,7 @@ from models.EnviFormerModel import EnviFormerModel
 
 def build_trainer(args: Namespace, config: dict, monitor_value="val_seq_acc") -> pl.Trainer:
     logger = TensorBoardLogger(f"results/", name=args.model_name,
-                               version=args.data_name + "_" + args.tokenizer)
+                               version=args.data_name + "_" + args.preprocessor)
     lr_monitor = LearningRateMonitor(logging_interval="epoch")
     patience = 10
     monitor_mode = "max" if "acc" in monitor_value else "min"
@@ -41,7 +41,7 @@ def build_trainer(args: Namespace, config: dict, monitor_value="val_seq_acc") ->
     acc_grad_batch = max(1, int(args.batch_size / config["batch_size"]))
     return pl.Trainer(accelerator="auto", logger=logger, strategy="auto", devices=args.gpus, callbacks=callbacks,
                       default_root_dir=f"results/{args.model_name}/",
-                      max_epochs=180 if args.debug else args.epochs, gradient_clip_val=1.0,
+                      max_epochs=4 if args.debug else args.epochs, gradient_clip_val=1.0,
                       accumulate_grad_batches=1, log_every_n_steps=10,
                       num_sanity_val_steps=2 if args.debug else 0, deterministic="warn")
 
@@ -64,7 +64,7 @@ def find_latest_ckpt(f):
 
 
 def main(args: Namespace) -> None:
-    print(f"Debug: {args.debug}\nModel: {args.model_name}\nDataset: {args.data_name}\nTokenizer: {args.tokenizer}")
+    print(f"Debug: {args.debug}\nModel: {args.model_name}\nDataset: {args.data_name}\nPreprocessor: {args.preprocessor}")
     print("Setting up")
     pl.seed_everything(2)
     torch.set_float32_matmul_precision('high')
@@ -75,7 +75,7 @@ def main(args: Namespace) -> None:
     train_loader, val_loader, test_loader = model.encode_data(data)
 
     print("Beginning training")
-    ckpt_path = f"results/{args.model_name}/{args.data_name}_{args.tokenizer}/checkpoints"
+    ckpt_path = f"results/{args.model_name}/{args.data_name}_{args.preprocessor}/checkpoints"
     if os.path.exists(ckpt_path):
         ckpt_file = [f for f in os.listdir(ckpt_path) if ".ckpt" in f]
         ckpt_file = max(ckpt_file, key=find_latest_ckpt)
@@ -87,17 +87,17 @@ def main(args: Namespace) -> None:
     print("Evaluating on test set")
     trainer.test(model, test_loader, ckpt_path=trainer.checkpoint_callback.best_model_path)
 
-    with open(f"results/{args.model_name}/{args.data_name}_{args.tokenizer}/tokens.json", "w") as token_file:
+    with open(f"results/{args.model_name}/{args.data_name}_{args.preprocessor}/tokens.json", "w") as token_file:
         json.dump(tokenizer, token_file, indent=4)
-    with open(f"results/{args.model_name}/{args.data_name}_{args.tokenizer}/config.json", "w") as c_file:
+    with open(f"results/{args.model_name}/{args.data_name}_{args.preprocessor}/config.json", "w") as c_file:
         json.dump(config, c_file, indent=4)
     return
 
 
 if __name__ == "__main__":
-    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"])
     parser = ArgumentParser()
     parser.add_argument("--model_name", type=str, default="EnviFormerModel", help="Valid models include: EnviFormerModel")
+    parser.add_argument("--preprocessor", type=str, default="envipath", help="Whether to use envipath standardisation rules or rdkit to canonicalise SMILES")
     parser.add_argument("--data_name", type=str, default="uspto", help="Which dataset to use, uspto, envipath")
     parser.add_argument("--tokenizer", type=str, default="regex", help="Style of tokenizer, regex")
     parser.add_argument("--max-len", type=int, default=256, help="Maximum encoded length to consider")
@@ -110,9 +110,16 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=250, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=128, help="Batch size to target")
     parser.add_argument("--weights-dataset", type=str, default="", help="Pretrained weights based on what dataset")
+    arguments = parser.parse_args()
+    if arguments.preprocessor == "envipath":
+        proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"])
+    else:
+        proc = None
     try:
         main(parser.parse_args())
     except Exception as e:
-        proc.kill()
+        if proc is not None:
+            proc.kill()
         raise e
-    proc.kill()
+    if proc is not None:
+        proc.kill()

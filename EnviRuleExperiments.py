@@ -41,6 +41,7 @@ class EnviRuleModel:
         self.fold = fold
         self.args = args
         self.rdkit_reaction = rdkit_reaction
+        self.canon_func = get_canon_func(args)
         clf_path = f"results/{self.model_name}/{self.dataset_name}/fold_{self.fold}_clf.txt"
         if os.path.exists(clf_path):
             file = open(clf_path, "rb")
@@ -69,7 +70,7 @@ class EnviRuleModel:
                         match = False
                         for candidate_products in pred_products:
                             candidate_products = candidate_products.split(".")
-                            candidate_products = {canon_smile(c) for c in candidate_products}
+                            candidate_products = {self.canon_func(c) for c in candidate_products}
                             pred_set = set(candidate_products)
                             if len(true_products - pred_set) == 0:
                                 match = True
@@ -160,6 +161,7 @@ def main(args):
 
     method_name = "envipath" if args.existing_rules else "envirule"
     java_gateway = JavaGateway()
+    canon_func = get_canon_func(args)
     for dataset in transformer_folders:
         dataset_name = dataset.split("/")[-2]
         args.data_name = "_".join(dataset_name.split("_")[:-1])
@@ -179,14 +181,14 @@ def main(args):
                 fold_data = json.load(fold_file)
             train_data = []
             for smirk in fold_data["train"]:
-                smirk = canon_smirk(smirk)
+                smirk = canon_smirk(smirk, canon_func)
                 if smirk is not None:
                     train_data.append(smirk)
             test_pathways = fold_data["test"]
-            test_pathways = standardise_pathways(test_pathways)
+            test_pathways = standardise_pathways(test_pathways, canon_func)
             test_reactions = []
             for smirk in fold_data["test_reactions"]:
-                smirk = canon_smirk(smirk)
+                smirk = canon_smirk(smirk, canon_func)
                 if smirk is not None:
                     test_reactions.append(smirk)
             os.makedirs(f"data/{method_name}/{dataset_name}", exist_ok=True)
@@ -290,6 +292,8 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("-ss", "--skip-single", action="store_true")
     parser.add_argument("-sm", "--skip-multi", action="store_true")
+    parser.add_argument("--preprocessor", type=str, default="envipath",
+                        help="Whether to use envipath standardisation rules or rdkit to canonicalise SMILES")
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument("-er", "--existing-rules", action="store_true")
     parser.add_argument("--model-name", type=str, default="envirule")

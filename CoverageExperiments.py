@@ -90,6 +90,8 @@ if __name__ == "__main__":
     parser.add_argument("--tokenizer", type=str, default="regex")
     parser.add_argument("--max-len", type=int, default=256, help="Maximum encoded length to consider")
     parser.add_argument("--min-len", type=int, default=0, help="Minimum encoded length to consider")
+    parser.add_argument("--preprocessor", type=str, default="envipath",
+                        help="Whether to use envipath standardisation rules or rdkit to canonicalise SMILES")
     arguments = parser.parse_args()
     try:
         main(arguments)

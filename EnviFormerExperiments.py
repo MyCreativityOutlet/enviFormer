@@ -28,12 +28,12 @@ from EnviPathDownloader import check_envipath_data
 
 
 def setup_train(args, train_data):
-    print(f"Debug: {args.debug}\nModel: {args.model_name}\nDataset: {args.data_name}\nTokenizer: {args.tokenizer}")
+    print(f"Debug: {args.debug}\nModel: {args.model_name}\nDataset: {args.data_name}\nPreprocessor: {args.preprocessor}")
     print("Setting up")
     pl.seed_everything(2)
     torch.set_float32_matmul_precision('high')
     model_class, config = setup_model(args)
-    with open(f"results/{args.model_name}/{args.weights_dataset}_{args.tokenizer}/tokens.json") as t_file:
+    with open(f"results/{args.model_name}/{args.weights_dataset}_{args.preprocessor}/tokens.json") as t_file:
         tokenizer = json.load(t_file)
     tokenizer[1] = {int(k): v for k, v in tokenizer[1].items()}
     model = model_class(config, vocab=tokenizer, p_args=args)
@@ -60,7 +60,7 @@ def setup_train(args, train_data):
     trainer = build_trainer(args, config)
     print("Beginning training")
     if args.weights_dataset:
-        ckpt_path = f"results/{args.model_name}/{args.weights_dataset}_{args.tokenizer}/checkpoints/"
+        ckpt_path = f"results/{args.model_name}/{args.weights_dataset}_{args.preprocessor}/checkpoints/"
         ckpt_path = os.path.join(ckpt_path, [f for f in os.listdir(ckpt_path) if ".ckpt" in f][0])
     else:
         ckpt_path = None
@@ -69,9 +69,9 @@ def setup_train(args, train_data):
     else:
         trainer.fit(model, train_loader, val_loader, ckpt_path=ckpt_path)
         model = model.__class__.load_from_checkpoint(trainer.checkpoint_callback.best_model_path, config=config, vocab=tokenizer, p_args=args)
-    with open(f"results/{args.model_name}/{args.data_name}_{args.tokenizer}/tokens.json", "w") as file:
+    with open(f"results/{args.model_name}/{args.data_name}_{args.preprocessor}/tokens.json", "w") as file:
         json.dump(tokenizer, file, indent=4)
-    with open(f"results/{args.model_name}/{args.data_name}_{args.tokenizer}/config.json", "w") as file:
+    with open(f"results/{args.model_name}/{args.data_name}_{args.preprocessor}/config.json", "w") as file:
         json.dump(config, file, indent=4)
     return model, trainer, tokenizer
 
@@ -123,10 +123,11 @@ def train_eval_single_multi(args):
     multi_test_output = {}
     single_test_output = {}
     thresholds = get_thresholds(value_type=set)
-    results_directory = f"results/{args.model_name}/{args.data_name}_{args.tokenizer}"
+    results_directory = f"results/{args.model_name}/{args.data_name}_{args.preprocessor}"
     check_envipath_data()
     curve_directory = "/".join(results_directory.split("/")[1:])
     extra_data = []
+    canon_func = get_canon_func(args)
     co2 = {"O=C=O", "C(=O)=O"}
     if os.path.exists(results_directory):
         folds = load_folds(results_directory)
@@ -142,8 +143,8 @@ def train_eval_single_multi(args):
             test = get_raw_envipath("sludge")
         else:
             raise ValueError(f"Can't use {args.data_name} unknown dataset type")
-        test_pathways = standardise_pathways(test["pathways"])
-        test_reactions = [canon_smirk(r["smirks"]) for r in test["reactions"]]
+        test_pathways = standardise_pathways(test["pathways"], canon_func)
+        test_reactions = [canon_smirk(r["smirks"], canon_func) for r in test["reactions"]]
         test_reactions = [r for r in test_reactions if r is not None and r.split(">>")[-1] not in co2]
         folds = [[train, test_pathways, test_reactions]] * 1
     elif "add" in args.data_name:
@@ -168,7 +169,7 @@ def train_eval_single_multi(args):
                 to_remove.add(r)
         train_data = [r for r in train_data if r not in to_remove]
         model, trainer, tokenizer = setup_train(args, train_data)
-        with open(f"results/{args.model_name}/{args.data_name}_{args.tokenizer}/fold_{count}_splits.json", "w") as file:
+        with open(f"results/{args.model_name}/{args.data_name}_{args.preprocessor}/fold_{count}_splits.json", "w") as file:
             json.dump({"train": train_data, "test": test_pathways, "test_reactions": test_data}, file)
         model = model.to(device)
 
@@ -216,12 +217,13 @@ def train_eval_single_multi(args):
 
 
 if __name__ == "__main__":
-    proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"])
     parser = ArgumentParser()
     parser.add_argument("data_name", type=str, default="soil", help="Which dataset to use, uspto or envipath")
     parser.add_argument("--model-name", type=str, default="EnviFormerModel",
                         help="Valid models include: EnviFormerModel")
     parser.add_argument("--tokenizer", type=str, default="regex", help="Style of tokenizer, regex")
+    parser.add_argument("--preprocessor", type=str, default="envipath",
+                        help="Whether to use envipath standardisation rules or rdkit to canonicalise SMILES")
     parser.add_argument("--max-len", type=int, default=256, help="Maximum encoded length to consider")
     parser.add_argument("--min-len", type=int, default=0, help="Minimum encoded length to consider")
     parser.add_argument("--augment-count", type=int, default=-1, help="How much SMILES augmentation to do, -1 disables")
@@ -235,6 +237,10 @@ if __name__ == "__main__":
     parser.add_argument("--score-all", action="store_true", help="Whether to group same reactants together")
     parser.add_argument("--run-clusters", action="store_true")
     arguments = parser.parse_args()
+    if arguments.preprocessor == "envipath":
+        proc = subprocess.Popen(["java", "-jar", "java/envirule-2.6.0-jar-with-dependencies.jar"])
+    else:
+        proc = None
     try:
         if arguments.data_name == "multi":
             data_names = ["soil_add_sludge", "bbd_add_sludge", "sludge_add_soil", "sludge_add_bbd"]
@@ -244,6 +250,8 @@ if __name__ == "__main__":
         else:
             train_eval_single_multi(arguments)
     except (Exception, KeyboardInterrupt) as e:
-        proc.kill()
+        if proc is not None:
+            proc.kill()
         raise e
-    proc.kill()
+    if proc is not None:
+        proc.kill()

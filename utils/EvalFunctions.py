@@ -570,7 +570,7 @@ def process_compare_pathways(args, test_output, thresholds, plot_curve=True):
     if plot_curve:
         sorted_recall, sorted_precision, area_under_curve = sort_recall_precision(recall, precision)
         plot_pr_curve(sorted_recall, sorted_precision, area_under_curve, f"{args.data_name} MultiGen",
-                      f"{args.model_name}/{args.data_name}_{args.tokenizer}", "multigen")
+                      f"{args.model_name}/{args.data_name}_{args.preprocessor}", "multigen")
     return recall, precision
 
 
