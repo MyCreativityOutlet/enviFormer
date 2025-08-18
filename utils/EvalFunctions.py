@@ -30,39 +30,31 @@ def get_shortest_path(pathway, in_start_node, in_end_node):
     except nx.NetworkXNoPath:
         return []
     pred.remove(in_start_node)
+    pred.remove(in_end_node)
     return pred
 
 
 def set_pathway_eval_weight(pathway):
-    # This method intends to replace the weight assignment functionality in compare_pathways
-    # So that it can work with merge_pathways
-    # This method intends to be applied to raw pathways before they are merged
-
     node_eval_weights = {}
-
     for node in pathway.nodes:
         # Scale score according to depth level
         node_eval_weights[node] = 1 / (2 ** pathway.nodes[node]["depth"]) if pathway.nodes[node]["depth"] >= 0 else 0
-
     return node_eval_weights
 
 
-def get_depth_adjusted_pathway(pathway, intermediates):
+def get_depth_adjusted_pathway(data_pathway, pred_pathway, intermediates):
     if len(intermediates) < 1:
-        return pathway
-    root_nodes = pathway.graph["root_nodes"]
-
-    for node in pathway.nodes:
+        return pred_pathway
+    root_nodes = pred_pathway.graph["root_nodes"]
+    for node in pred_pathway.nodes:
         if node in root_nodes:
             continue
-
-        if node in intermediates:
-            pathway.nodes[node]["depth"] = -99
+        if node in intermediates and node not in data_pathway:
+            pred_pathway.nodes[node]["depth"] = -99
         else:
             shortest_path_list = []
-
             for root_node in root_nodes:
-                shortest_path_nodes = get_shortest_path(pathway, root_node, node)
+                shortest_path_nodes = get_shortest_path(pred_pathway, root_node, node)
                 if shortest_path_nodes:
                     shortest_path_list.append(shortest_path_nodes)
 
@@ -71,9 +63,8 @@ def get_depth_adjusted_pathway(pathway, intermediates):
                 shortest_path_nodes = min(shortest_path_list, key=len)
                 num_ints = sum(1 for shortest_path_node in shortest_path_nodes if
                                shortest_path_node in intermediates)
-                pathway.nodes[node]["depth"] -= num_ints
-
-    return pathway
+                pred_pathway.nodes[node]["depth"] -= num_ints
+    return pred_pathway
 
 
 def assign_next_depth(pathway, current_depth):
@@ -104,18 +95,9 @@ def get_pathway_with_depth(pathway):
     return pathway
 
 
-def get_down_stream_nodes(pathway, node):
-    if node not in pathway.graph["down_stream"]:
-        pathway.graph["down_stream"][node] = set(pathway.successors(node))
-    return pathway.graph["down_stream"][node]
-
-
 def initialise_pathway(pathway):
     pathway.graph["root_nodes"] = {n for n in pathway.nodes if pathway.nodes[n]["depth"] == 0}
     pathway = get_pathway_with_depth(pathway)
-    pathway.graph["down_stream"] = {}
-    for node in pathway.nodes:
-        get_down_stream_nodes(pathway, node)
     return pathway
 
 
@@ -126,11 +108,10 @@ def compare_pathways(data_pathway, pred_pathway):
     this can be created from the graph_from_envipath or graph_from_serializable functions"""
     data_pathway = initialise_pathway(data_pathway)
     pred_pathway = initialise_pathway(pred_pathway)
-    start_and_end_nodes = find_intermediates(data_pathway, pred_pathway)
-    intermediates = {n for n in start_and_end_nodes}
+    intermediates = find_intermediates(data_pathway, pred_pathway)
 
     if intermediates:
-        pred_pathway = get_depth_adjusted_pathway(pred_pathway, intermediates)
+        pred_pathway = get_depth_adjusted_pathway(data_pathway, pred_pathway, intermediates)
 
     test_pathway_eval_weights = set_pathway_eval_weight(data_pathway)
     pred_pathway_eval_weights = set_pathway_eval_weight(pred_pathway)
@@ -140,12 +121,7 @@ def compare_pathways(data_pathway, pred_pathway):
     data_only_nodes = set(n for n in data_pathway.nodes if n not in common_nodes)
     pred_only_nodes = set(n for n in pred_pathway.nodes if n not in common_nodes)
 
-    score_TP = 0.0
-    score_FP = 0.0
-    score_FN = 0.0
-    final_score = 0.0
-    precision = 0.0
-    recall = 0.0
+    score_TP, score_FP, score_FN, final_score, precision, recall = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
     for node in common_nodes:
         if pred_pathway.nodes[node]["depth"] > 0:
@@ -159,32 +135,28 @@ def compare_pathways(data_pathway, pred_pathway):
         if pred_pathway.nodes[node]["depth"] > 0:
             score_FP += pred_pathway_eval_weights[node]
 
-    if (score_TP + score_FP + score_FN) > 0:
-        final_score = score_TP / (score_TP + score_FP + score_FN)
-    if (score_TP + score_FP) > 0:
-        precision = score_TP / (score_TP + score_FP)
-    if (score_TP + score_FN) > 0:
-        recall = score_TP / (score_TP + score_FN)
-    return (final_score, precision, recall), intermediates
+    final_score = score_TP / denom if (denom := score_TP + score_FP + score_FN) > 0 else 0.0
+    precision = score_TP / denom if (denom := score_TP + score_FP) > 0 else 0.0
+    recall = score_TP / denom if (denom := score_TP + score_FN) > 0 else 0.0
+    return final_score, precision, recall, intermediates
 
 
 def find_intermediates(data_pathway, pred_pathway):
-    data_pathway_nodes = data_pathway.nodes
+    # data_pathway_nodes = data_pathway.nodes
     common_nodes = get_common_nodes(pred_pathway, data_pathway)
     intermediates = set()
     for node in common_nodes:
-        down_stream_nodes = get_down_stream_nodes(data_pathway, node)
-
+        down_stream_nodes = data_pathway.successors(node)
         for down_stream_node in down_stream_nodes:
             if down_stream_node in pred_pathway:
                 all_ints = get_shortest_path(pred_pathway, node, down_stream_node)
-                intermediates.update(i for i in all_ints if i not in data_pathway_nodes)
+                # intermediates.update(i for i in all_ints if i not in data_pathway_nodes)
+                intermediates.update(all_ints)
     return intermediates
 
 
 def get_common_nodes(pred_pathway, data_pathway):
     common_nodes = set()
-
     for node in data_pathway.nodes:
         is_pathway_root_node = node in data_pathway.graph["root_nodes"]
         is_this_root_node = node in pred_pathway.graph["root_nodes"]
