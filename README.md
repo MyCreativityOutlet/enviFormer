@@ -27,6 +27,8 @@ The United States Patent & Trademark Office (USPTO) dataset is available [here](
 These are all the exact files used to run experiments in the paper.
 
 ## Recreate Experiments
+**PLEASE USE VERSION 1.1.0 FOR EXACT RESULTS REPRODUCTION. VERSIONS >1.1.0 INCLUDE UPDATES THAT GIVE DIFFERENT RESULTS**
+
 In order to recreate the results presented in the paper we provide the following files:
 - `PreTrainEnviFormer.py`
 - `EnviFormerExperiments.py`
